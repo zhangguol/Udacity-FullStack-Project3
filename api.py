@@ -10,7 +10,7 @@ from google.appengine.api import taskqueue
 
 from models import User, Game, Score
 from models import StringMessage, NewGameForm, GameForm, MakeMoveForm,\
-    ScoreFroms
+    ScoreFroms, GameForms
 from util import get_by_urlsafe
 
 USER_REQUEST = endpoints.ResourceContainer(user_name=messages.StringField(1),
@@ -20,6 +20,7 @@ GET_GAME_REQUEST = endpoints.ResourceContainer(urlsafe_game_key=messages.StringF
 MAKE_MOVE_REQUEST = endpoints.ResourceContainer(
     MakeMoveForm,
     urlsafe_game_key=messages.StringField(1),)
+GET_USER_GAMES_REQUEST = endpoints.ResourceContainer(user_name=messages.StringField(1),)
 
 @endpoints.api(name='hangman', version='v1')
 class HangmanApi(remote.Service):
@@ -49,7 +50,7 @@ class HangmanApi(remote.Service):
     def new_game(self, request):
         user = User.query(User.name == request.user_name).get()
         if not user:
-            raise endpoints.FileNotFoundException(
+            raise endpoints.NotFoundException(
                 'A user with that name does not exist')
         game = Game.new_game(user.key, request.word)
 
@@ -66,7 +67,7 @@ class HangmanApi(remote.Service):
         if game:
             return game.to_form('Time to make a Guess')
         else:
-            raise endpoints.FileNotFoundException('Game not found!')
+            raise endpoints.NotFoundException('Game not found!')
 
 
     # Make a move
@@ -78,7 +79,7 @@ class HangmanApi(remote.Service):
     def make_move(self, request):
         game = get_by_urlsafe(request.urlsafe_game_key, Game)
         if not game:
-            raise endpoints.FileNotFoundException('Game not found!')
+            raise endpoints.NotFoundException('Game not found!')
 
         if game.game_over:
             return game.to_form('Game already over!')
@@ -104,9 +105,25 @@ class HangmanApi(remote.Service):
             game.put()
             if game.attempts >= game.max_attempts:
                 game.end_game(False)
-                return game.to_form("Game over! The correct word is" + game.target)
+                return game.to_form("Game over! The correct word is " + game.target)
             else:
                 return game.to_form("Your guess is wrong!")
+
+
+    # get all of a user's active game
+    @endpoints.method(request_message=GET_USER_GAMES_REQUEST,
+                      response_message=GameForms,
+                      path='get_user_games',
+                      name='get_user_games',
+                      http_method='POST')
+    def get_user_games(self,request):
+        user = User.query(User.name == request.user_name).get()
+        if not user:
+            raise endpoints.NotFoundException(
+                'A user with that name does not exist!')
+        games = Game.query(ancestor=user.key).filter(Game.game_over == False)
+        items = [game.to_form("") for game in games]
+        return GameForms(items=items)
 
 api = endpoints.api_server([HangmanApi])
 

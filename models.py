@@ -23,14 +23,15 @@ class Game(ndb.Model):
     user = ndb.KeyProperty(required = True, kind = 'User')
 
     @classmethod
-    def new_game(cls, user, word):
+    def new_game(cls, user_key, word):
         current_result = "".join(["_" for i in range(0, len(word))])
-        game = Game(user=user,
+        game = Game(user=user_key,
                     target=word.upper(),
                     current_result=current_result,
                     attempts=0,
                     max_attempts=6,
-                    game_over=False)
+                    game_over=False,
+                    parent=user_key)
         game.put()
         return game
 
@@ -72,6 +73,9 @@ class GameForm(messages.Message):
     message = messages.StringField(5, required=True)
     user_name = messages.StringField(6, required=True)
 
+class GameForms(messages.Message):
+    items = messages.MessageField(GameForm, 1, repeated=True)
+
 class NewGameForm(messages.Message):
     user_name = messages.StringField(1, required=True)
     word = messages.StringField(2, required=True)
@@ -85,12 +89,9 @@ class ScoreForm(messages.Message):
     won = messages.BooleanField(3, required=True)
     score = messages.IntegerField(4, required=True)
 
-
 class ScoreFroms(messages.Message):
     items = messages.MessageField(ScoreForm, 1, repeated=True)
 
-
 class StringMessage(messages.Message):
     message = messages.StringField(1, required=True)
-
 
