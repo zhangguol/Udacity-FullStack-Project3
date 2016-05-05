@@ -11,7 +11,7 @@ class User(ndb.Model):
     """User Profile"""
     name = ndb.StringProperty(required = True)
     email = ndb.StringProperty()
-
+    score = ndb.IntegerProperty(required=True, default=0)
 
 class Game(ndb.Model):
     """Game Object"""
@@ -39,11 +39,16 @@ class Game(ndb.Model):
         self.game_over = True
         self.put()
 
-        score = Score(user=self.user,
+        score = self.max_attempts - self.attempts
+        record = GameRecord(user=self.user,
                       date=date.today(),
                       won=won,
-                      score=self.max_attempts - self.attempts)
-        score.put()
+                      score=score)
+        record.put()
+
+        user = self.user.get()
+        user.score += score
+        user.put()
 
     def to_form(self, message):
         form = GameForm()
@@ -56,8 +61,8 @@ class Game(ndb.Model):
         return form
 
 
-class Score(ndb.Model):
-    """Score object"""
+class GameRecord(ndb.Model):
+    """gameRecord object"""
     user = ndb.KeyProperty(required=True, kind='User')
     date = ndb.DateProperty(required=True)
     won = ndb.BooleanProperty(required=True)
@@ -83,14 +88,24 @@ class NewGameForm(messages.Message):
 class MakeMoveForm(messages.Message):
     guess = messages.StringField(1, required=True)
 
+class GetHightScoresForm(messages.Message):
+    number_of_results = messages.IntegerField(1, required=False)
+
 class ScoreForm(messages.Message):
+    user_name = messages.StringField(1, required=True)
+    score = messages.IntegerField(2, required=True)
+
+class ScoreForms(messages.Message):
+    items = messages.MessageField(ScoreForm, 1, repeated=True)
+
+class GameRecordForm(messages.Message):
     user_name = messages.StringField(1, required=True)
     date = messages.StringField(2, required=True)
     won = messages.BooleanField(3, required=True)
     score = messages.IntegerField(4, required=True)
 
-class ScoreFroms(messages.Message):
-    items = messages.MessageField(ScoreForm, 1, repeated=True)
+class GameRecordForms(messages.Message):
+    items = messages.MessageField(GameRecordForm, 1, repeated=True)
 
 class CancelGameForm(messages.Message):
     success = messages.BooleanField(1, required=True)

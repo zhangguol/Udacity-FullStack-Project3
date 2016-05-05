@@ -8,9 +8,10 @@ from protorpc import remote, messages
 from google.appengine.api import memcache
 from google.appengine.api import taskqueue
 
-from models import User, Game, Score
+from models import User, Game, GameRecord
 from models import StringMessage, NewGameForm, GameForm, MakeMoveForm,\
-    ScoreFroms, GameForms, CancelGameForm
+    GameRecordForms, GameForms, CancelGameForm, GetHightScoresForm, ScoreForms,\
+    ScoreForm
 from util import get_by_urlsafe
 
 USER_REQUEST = endpoints.ResourceContainer(user_name=messages.StringField(1),
@@ -21,7 +22,8 @@ MAKE_MOVE_REQUEST = endpoints.ResourceContainer(
     MakeMoveForm,
     urlsafe_game_key=messages.StringField(1),)
 GET_USER_GAMES_REQUEST = endpoints.ResourceContainer(user_name=messages.StringField(1),)
-Cancel_GAME_REQUEST=endpoints.ResourceContainer(urlsafe_game_key=messages.StringField(1),)
+CANCEl_GAME_REQUEST = endpoints.ResourceContainer(urlsafe_game_key=messages.StringField(1),)
+GET_HIGHT_SCORES_REQUEST = endpoints.ResourceContainer(GetHightScoresForm,)
 
 @endpoints.api(name='hangman', version='v1')
 class HangmanApi(remote.Service):
@@ -128,7 +130,7 @@ class HangmanApi(remote.Service):
 
 
     # cancel a game in progress
-    @endpoints.method(request_message=Cancel_GAME_REQUEST,
+    @endpoints.method(request_message=CANCEl_GAME_REQUEST,
                       response_message=CancelGameForm,
                       path='cancel_game/{urlsafe_game_key}',
                       name='cancel_game',
@@ -146,6 +148,23 @@ class HangmanApi(remote.Service):
         return CancelGameForm(success=True,
                              message='Game is cancelled successfully')
 
+
+    # high scores in descending order
+    @endpoints.method(request_message=GET_HIGHT_SCORES_REQUEST,
+                      response_message=ScoreForms,
+                      path='get_high_scores',
+                      name='get_high_scores',
+                      http_method='POST')
+    def get_high_scores(self, request):
+        users = User.query().order(-User.score)
+        if request.number_of_results:
+            users = users.fetch(request.number_of_results)
+
+        if not users:
+            raise endpoints.NotFoundException('There is no user!')
+        items = [ScoreForm(user_name=user.name, score=user.score) for user in users]
+
+        return ScoreForms(items=items)
 
 api = endpoints.api_server([HangmanApi])
 
