@@ -92,6 +92,10 @@ class ScoreForm(messages.Message):
 class ScoreFroms(messages.Message):
     items = messages.MessageField(ScoreForm, 1, repeated=True)
 
+class CancelGameForm(messages.Message):
+    success = messages.BooleanField(1, required=True)
+    message = messages.StringField(2, required=True)
+
 class StringMessage(messages.Message):
     message = messages.StringField(1, required=True)
 

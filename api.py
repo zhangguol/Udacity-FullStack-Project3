@@ -10,7 +10,7 @@ from google.appengine.api import taskqueue
 
 from models import User, Game, Score
 from models import StringMessage, NewGameForm, GameForm, MakeMoveForm,\
-    ScoreFroms, GameForms
+    ScoreFroms, GameForms, CancelGameForm
 from util import get_by_urlsafe
 
 USER_REQUEST = endpoints.ResourceContainer(user_name=messages.StringField(1),
@@ -21,6 +21,7 @@ MAKE_MOVE_REQUEST = endpoints.ResourceContainer(
     MakeMoveForm,
     urlsafe_game_key=messages.StringField(1),)
 GET_USER_GAMES_REQUEST = endpoints.ResourceContainer(user_name=messages.StringField(1),)
+Cancel_GAME_REQUEST=endpoints.ResourceContainer(urlsafe_game_key=messages.StringField(1),)
 
 @endpoints.api(name='hangman', version='v1')
 class HangmanApi(remote.Service):
@@ -116,7 +117,7 @@ class HangmanApi(remote.Service):
                       path='get_user_games',
                       name='get_user_games',
                       http_method='POST')
-    def get_user_games(self,request):
+    def get_user_games(self, request):
         user = User.query(User.name == request.user_name).get()
         if not user:
             raise endpoints.NotFoundException(
@@ -124,6 +125,27 @@ class HangmanApi(remote.Service):
         games = Game.query(ancestor=user.key).filter(Game.game_over == False)
         items = [game.to_form("") for game in games]
         return GameForms(items=items)
+
+
+    # cancel a game in progress
+    @endpoints.method(request_message=Cancel_GAME_REQUEST,
+                      response_message=CancelGameForm,
+                      path='cancel_game/{urlsafe_game_key}',
+                      name='cancel_game',
+                      http_method='DELETE')
+    def cancel_game(self, request):
+        game = get_by_urlsafe(request.urlsafe_game_key, Game)
+        if not game:
+            raise endpoints.NotFoundException('Game not found!')
+
+        if game.game_over:
+            return CancelGameForm(success=False,
+                                  message='Cancelling a completed game is not allowed')
+
+        game.key.delete()
+        return CancelGameForm(success=True,
+                             message='Game is cancelled successfully')
+
 
 api = endpoints.api_server([HangmanApi])
 
