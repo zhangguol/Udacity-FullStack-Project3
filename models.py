@@ -43,7 +43,8 @@ class Game(ndb.Model):
         record = GameRecord(user=self.user,
                       date=date.today(),
                       won=won,
-                      score=score)
+                      score=score,
+                      parent=self.user)
         record.put()
 
         user = self.user.get()
@@ -106,6 +107,13 @@ class GameRecordForm(messages.Message):
 
 class GameRecordForms(messages.Message):
     items = messages.MessageField(GameRecordForm, 1, repeated=True)
+
+class UserRankingForm(messages.Message):
+    name = messages.StringField(1, required=True)
+    win_ratio = messages.FloatField(2, required=True)
+
+class UserRankingForms(messages.Message):
+    items = messages.MessageField(UserRankingForm, 1, repeated=True)
 
 class CancelGameForm(messages.Message):
     success = messages.BooleanField(1, required=True)

@@ -4,14 +4,14 @@
 import re
 import logging
 import endpoints
-from protorpc import remote, messages
+from protorpc import remote, messages, message_types
 from google.appengine.api import memcache
 from google.appengine.api import taskqueue
 
 from models import User, Game, GameRecord
 from models import StringMessage, NewGameForm, GameForm, MakeMoveForm,\
     GameRecordForms, GameForms, CancelGameForm, GetHightScoresForm, ScoreForms,\
-    ScoreForm
+    ScoreForm, UserRankingForm, UserRankingForms
 from util import get_by_urlsafe
 
 USER_REQUEST = endpoints.ResourceContainer(user_name=messages.StringField(1),
@@ -165,6 +165,34 @@ class HangmanApi(remote.Service):
         items = [ScoreForm(user_name=user.name, score=user.score) for user in users]
 
         return ScoreForms(items=items)
+
+
+    # get user's rankings
+    @endpoints.method(request_message=message_types.VoidMessage,
+                      response_message=UserRankingForms,
+                      path='get_user_rangkings',
+                      name='get_user_rankings',
+                      http_method='GET')
+    def get_user_rangkings(self, request):
+        def get_user_win_ratio(user_key):
+            user_game_records = GameRecord.query(ancestor=user_key)
+            total_game_count = user_game_records.count()
+            if total_game_count == 0:
+                return 0.0
+
+            win_game_records = user_game_records.filter(GameRecord.won == True)
+            win_game_count = win_game_records.count()
+
+            return float(win_game_count) / float(total_game_count)
+
+        users = User.query()
+        items = [UserRankingForm(name=user.name,
+                                 win_ratio=get_user_win_ratio(user.key))
+                 for user in users]
+        items = sorted(items, key=lambda x: x.win_ratio, reverse=True)
+
+        return UserRankingForms(items=items)
+
 
 api = endpoints.api_server([HangmanApi])
 
