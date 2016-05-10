@@ -9,18 +9,18 @@ from google.appengine.ext import ndb
 # Game Models
 class User(ndb.Model):
     """User Profile"""
-    name = ndb.StringProperty(required = True)
+    name = ndb.StringProperty(required=True)
     email = ndb.StringProperty()
     score = ndb.IntegerProperty(required=True, default=0)
 
 class Game(ndb.Model):
     """Game Object"""
-    target = ndb.StringProperty(required = True)
-    current_result = ndb.StringProperty(required = True)
-    attempts = ndb.IntegerProperty(required = True)
-    max_attempts = ndb.IntegerProperty(required = True, default = 6)
-    game_over = ndb.BooleanProperty(required = True, default = False)
-    user = ndb.KeyProperty(required = True, kind = 'User')
+    target = ndb.StringProperty(required=True)
+    current_result = ndb.StringProperty(required=True)
+    attempts = ndb.IntegerProperty(required=True)
+    max_attempts = ndb.IntegerProperty(required=True, default=6)
+    game_over = ndb.BooleanProperty(required=True, default=False)
+    user = ndb.KeyProperty(required=True, kind='User')
 
     @classmethod
     def new_game(cls, user_key, word):
