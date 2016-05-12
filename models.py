@@ -70,7 +70,7 @@ class GameRecord(ndb.Model):
     score = ndb.IntegerProperty(required=True)
 
 
-# Form Models
+# Forms
 class GameForm(messages.Message):
     urlsafe_key = messages.StringField(1, required=True)
     attempts = messages.IntegerField(2, required=True)

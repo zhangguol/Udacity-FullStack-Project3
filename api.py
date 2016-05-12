@@ -29,13 +29,13 @@ GET_HIGHT_SCORES_REQUEST = endpoints.ResourceContainer(GetHightScoresForm,)
 class HangmanApi(remote.Service):
     """Game API"""
 
-    # Create a new user
     @endpoints.method(request_message=USER_REQUEST,
                       response_message=StringMessage,
                       path='user',
                       name='create_user',
                       http_method='Post')
     def create_user(self, request):
+        """Create new user, requires a unique username"""
         if User.query(User.name == request.user_name).get():
             raise endpoints.ConflictException(
                 'A user with that name already exists!')
@@ -44,13 +44,13 @@ class HangmanApi(remote.Service):
         return StringMessage(
             message='User {} created!'.format(request.user_name))
 
-    # Start a new game
     @endpoints.method(request_message=NEW_GAME_REQUEST,
                response_message=GameForm,
                path='game',
                name='new_game',
                http_method='POST')
     def new_game(self, request):
+        """Create new Game"""
         user = User.query(User.name == request.user_name).get()
         if not user:
             raise endpoints.NotFoundException(
@@ -59,13 +59,13 @@ class HangmanApi(remote.Service):
 
         return game.to_form('Good luck playing Hangman')
 
-    # Get a game status
     @endpoints.method(request_message=GET_GAME_REQUEST,
                       response_message=GameForm,
                       path='game/{urlsafe_game_key}',
                       name='get_game',
                       http_method='GET')
     def get_game(self, request):
+        """Return the current game status"""
         game = get_by_urlsafe(request.urlsafe_game_key, Game)
         if game:
             return game.to_form('Time to make a Guess')
@@ -73,13 +73,13 @@ class HangmanApi(remote.Service):
             raise endpoints.NotFoundException('Game not found!')
 
 
-    # Make a move
     @endpoints.method(request_message=MAKE_MOVE_REQUEST,
                       response_message=GameForm,
                       path='game/{urlsafe_game_key}',
                       name='make_move',
                       http_method='PUT')
     def make_move(self, request):
+        """Makes a move. Return a game state with message"""
         game = get_by_urlsafe(request.urlsafe_game_key, Game)
         if not game:
             raise endpoints.NotFoundException('Game not found!')
@@ -113,13 +113,13 @@ class HangmanApi(remote.Service):
                 return game.to_form("Your guess is wrong!")
 
 
-    # get all of a user's active game
     @endpoints.method(request_message=GET_USER_GAMES_REQUEST,
                       response_message=GameForms,
                       path='get_user_games',
                       name='get_user_games',
                       http_method='POST')
     def get_user_games(self, request):
+        """Get all of a user's active games"""
         user = User.query(User.name == request.user_name).get()
         if not user:
             raise endpoints.NotFoundException(
@@ -128,14 +128,13 @@ class HangmanApi(remote.Service):
         items = [game.to_form("") for game in games]
         return GameForms(items=items)
 
-
-    # cancel a game in progress
     @endpoints.method(request_message=CANCEl_GAME_REQUEST,
                       response_message=CancelGameForm,
                       path='cancel_game/{urlsafe_game_key}',
                       name='cancel_game',
                       http_method='DELETE')
     def cancel_game(self, request):
+        """Cancel a game in progress"""
         game = get_by_urlsafe(request.urlsafe_game_key, Game)
         if not game:
             raise endpoints.NotFoundException('Game not found!')
@@ -148,14 +147,13 @@ class HangmanApi(remote.Service):
         return CancelGameForm(success=True,
                              message='Game is cancelled successfully')
 
-
-    # high scores in descending order
     @endpoints.method(request_message=GET_HIGHT_SCORES_REQUEST,
                       response_message=ScoreForms,
                       path='get_high_scores',
                       name='get_high_scores',
                       http_method='POST')
     def get_high_scores(self, request):
+        """Get scores in descending order"""
         users = User.query().order(-User.score)
         if request.number_of_results:
             users = users.fetch(request.number_of_results)
@@ -166,14 +164,13 @@ class HangmanApi(remote.Service):
 
         return ScoreForms(items=items)
 
-
-    # get user's rankings
     @endpoints.method(request_message=message_types.VoidMessage,
                       response_message=UserRankingForms,
                       path='get_user_rangkings',
                       name='get_user_rankings',
                       http_method='GET')
     def get_user_rangkings(self, request):
+        """Get users' rankings"""
         def get_user_win_ratio(user_key):
             user_game_records = GameRecord.query(ancestor=user_key)
             total_game_count = user_game_records.count()
