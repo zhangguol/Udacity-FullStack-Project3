@@ -1,0 +1,50 @@
+What additional properties did you add to your models and why?
+
+    - User Model
+
+        1. score: add a property named 'score' to the User mode to track the user's socre of games.
+        And the 'score' will be set to 0 by default when a user is created. Adding the property 
+        'score' will make the 'get_high_scores' easier to get the score for every user.
+
+    - Game Model
+        Comparing with skeleton project, I add (or change) following properties. 
+
+            1. target: Store the target word of a game.
+            2. current_result: Store the current guessing status of a game.
+            3. attempts: Store the current failed guessing times.
+            4. max_attempts: Store the maximum failed times. This will be set to 6 by default, 
+               since the traditional Hangman game will allow 6 times for failed guessing. But
+               it can also be customized when a game is create.
+            5. guesses: Store the history of guesses of a game. This is used for the 'game_history'
+               api.
+            6. result_history: Store the history of 'current_result' after of every guessing. This
+               is used for the 'game_history' api.
+
+    - GameRecord Model
+        I also add a model to store every completed game. This Model is used to get the win/loss
+        ratio of every user in the 'get_user_rankings' api
+
+        In this model, there is 3 properties.
+
+            1. user: Store the user that this game record belongs to.
+            2. date: Store the date when the game of this record is completed.
+            3. won: Store if the status (win/loss) of this game record.
+            4. score: Store the score of this game record.
+
+
+What were some of the trade-offs or struggles you faced when implementing the new game logic?
+
+    1. get_high_scores
+
+        At first, I want to store the score in every GameRecord. When 'get_high_scores' is called,
+        I will get the list of users and get the game records and calculate the score for each user.
+        But I think this will take too many queries. Then, I consider that each user only has one
+        score. So I add a propery 'socre' to the User model to store. And this make the
+        'get_high_scores' only have 1 query.
+
+    2. get_user_rankings
+
+        For this api, I keep the way of getting the list of users, getting the game records, and then
+        calculate win/loss ratio for each user. This is because calculating the win/lose ratio needs
+        the total number of games of a user. Maybe I should also add two properties, 'win_ratio' and
+        'total_games_number' to the User model to make it easier to get users' win/lose ration.

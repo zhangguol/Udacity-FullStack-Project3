@@ -64,7 +64,7 @@ the 'max_attempts', the game will be over.
    
 - **get_user_games**
     - Path: 'get_user_games'
-    - method: POST
+    - Method: POST
     - Parameters: user_name
     - Returns: GameForms
     - Description: Get all active of the given user. Will raise a NotFoundException
@@ -72,23 +72,73 @@ the 'max_attempts', the game will be over.
 
 - **cancel_game**
     - Path: 'cancel/{urlsafe_game_key}'
-    - method: DELETE
+    - Method: DELETE
     - Parameters: urlsafe_game_key
     - Returns: CancelGameForm
     - Description: Cancel the game with the given urlsafe_game_key if the game is active.
 
 - **get_high_scores**
     - Path: 'get_high_scores'
-    - method: POST
+    - Method: POST
     - Parameters: number_of_results(otional)
     - Returns: ScoreForms
     - Description: Get the scores in descending order. If there is number_of_results, the
-    limits number of results will be returned.
+    limits number of results will be returned. The score of a game is calculated by 
+    'max_attempts' - 'attempts'
 
 - **get_user_rankings**
     - Path: 'get_user_rankings'
-    - method: GET
+    - Method: GET
     - Parameters: None
     - Returns: UserRankingForms
     - Description: Get the rankings of the users by the win/lose ratio.
+
+- **game_history**
+    - Path: 'game_history/{urlsafe_game_key}'
+    - Method: GET
+    - Parameters: urlsafe_game_key
+    - Returns: MoveHistoryForms
+    - Description: Get the history of a game with urlsafe_game_key. Will raise NotFoundException
+    if the game doesn't exsit
+
+
+## Models Incluede:
+- **User**
+    - Stores unique user_name, email address (optional), and score (defualt is 0)
+
+- **Game**
+    - Stroes unique game states. Parent is User.
+
+- **GameRecord**
+    - Records completed games. Parent is User.
+
+
+## Forms Included:
+ - **GameForm**    
+    - Representation of a Game's state (urlsafe_key, attempts_remaining,
+    game_over flag, message, user_name).
+ - **GameForms**
+    - Multiple GameForm container
+ - **NewGameForm**
+    - Used to create a new game (user_name, word).
+ - **MakeMoveForm**
+    - Inbound make move form (guess).
+ - **ScoreForm**
+    - Representation of a completed game's Score (user_name, score).
+ - **ScoreForms**
+    - Multiple ScoreForm container.
+ - **UserRankingForm**
+    - Representation of the performance of a uesr (name, win_ration).
+ - **UserRankingForms**
+    - Multiple UserRankingForm container.
+ - **CancelGameFor**
+    - Representation of the result of canceling a game (success, message).
+ - **MoveHistoryForm**
+    - Representation of the history of a move (guess, result).
+ - **MoveHistoryForms**
+    - Multiple MoveHistoryForm container.
+ - **StringMessage**
+    - General purpose String container.
+
+
 
