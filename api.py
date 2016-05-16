@@ -10,8 +10,8 @@ from google.appengine.api import taskqueue
 
 from models import User, Game, GameRecord
 from models import StringMessage, NewGameForm, GameForm, MakeMoveForm,\
-    GameRecordForms, GameForms, CancelGameForm, GetHightScoresForm, ScoreForms,\
-    ScoreForm, UserRankingForm, UserRankingForms
+    GameForms, CancelGameForm, GetHightScoresForm, ScoreForms,\
+    ScoreForm, UserRankingForm, UserRankingForms, MoveHistoryForm, MoveHistoryForms
 from util import get_by_urlsafe
 
 USER_REQUEST = endpoints.ResourceContainer(user_name=messages.StringField(1),
@@ -24,6 +24,7 @@ MAKE_MOVE_REQUEST = endpoints.ResourceContainer(
 GET_USER_GAMES_REQUEST = endpoints.ResourceContainer(user_name=messages.StringField(1),)
 CANCEl_GAME_REQUEST = endpoints.ResourceContainer(urlsafe_game_key=messages.StringField(1),)
 GET_HIGHT_SCORES_REQUEST = endpoints.ResourceContainer(GetHightScoresForm,)
+GAME_HISTORY_REQUEST = endpoints.ResourceContainer(urlsafe_game_key=messages.StringField(1),)
 
 @endpoints.api(name='hangman', version='v1')
 class HangmanApi(remote.Service):
@@ -33,7 +34,7 @@ class HangmanApi(remote.Service):
                       response_message=StringMessage,
                       path='user',
                       name='create_user',
-                      http_method='Post')
+                      http_method='POST')
     def create_user(self, request):
         """Create new user, requires a unique username"""
         if User.query(User.name == request.user_name).get():
@@ -92,26 +93,30 @@ class HangmanApi(remote.Service):
             raise endpoints.BadRequestException('Guess can only be one character')
 
         indexes= [m.start() for m in re.finditer(guess, game.target)]
+
         if len(indexes) > 0:
             currentResultList = list(game.current_result)
             for idx in indexes:
                 currentResultList[idx] = guess
             game.current_result = "".join(currentResultList)
-            game.put()
             if game.current_result == game.target:
                 game.end_game(True)
-                return game.to_form('You win!')
+                message = 'You win!'
             else:
-                return game.to_form('You get a correct character')
+                message = 'You get a correct letter'
         else:
             game.attempts += 1
-            game.put()
             if game.attempts >= game.max_attempts:
                 game.end_game(False)
-                return game.to_form("Game over! The correct word is " + game.target)
+                message = "Game over! The correct word is {}".format(game.target)
             else:
-                return game.to_form("Your guess is wrong!")
+                message = "Your guess is wrong!"
 
+        game.guesses.append(guess)
+        game.result_history.append(game.current_result)
+
+        game.put()
+        return game.to_form(message)
 
     @endpoints.method(request_message=GET_USER_GAMES_REQUEST,
                       response_message=GameForms,
@@ -169,7 +174,7 @@ class HangmanApi(remote.Service):
                       path='get_user_rangkings',
                       name='get_user_rankings',
                       http_method='GET')
-    def get_user_rangkings(self, request):
+    def get_user_rankings(self, request):
         """Get users' rankings"""
         def get_user_win_ratio(user_key):
             user_game_records = GameRecord.query(ancestor=user_key)
@@ -189,6 +194,21 @@ class HangmanApi(remote.Service):
         items = sorted(items, key=lambda x: x.win_ratio, reverse=True)
 
         return UserRankingForms(items=items)
+
+    @endpoints.method(request_message=GAME_HISTORY_REQUEST,
+                      response_message=MoveHistoryForms,
+                      path='game_history/{urlsafe_game_key}',
+                      name='game_history',
+                      http_method='GET')
+    def game_history(self, request):
+        """Get history of a game with given urlsafe_game_key"""
+        game = get_by_urlsafe(request.urlsafe_game_key, Game)
+        if not game:
+            raise endpoints.NotFoundException('Game not found!')
+
+        items = [MoveHistoryForm(guess=move[0], result=move[1])
+                 for move in zip(game.guesses, game.result_history)]
+        return MoveHistoryForms(items = items)
 
 
 api = endpoints.api_server([HangmanApi])

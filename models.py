@@ -21,6 +21,8 @@ class Game(ndb.Model):
     max_attempts = ndb.IntegerProperty(required=True, default=6)
     game_over = ndb.BooleanProperty(required=True, default=False)
     user = ndb.KeyProperty(required=True, kind='User')
+    guesses = ndb.StringProperty(repeated=True)
+    result_history = ndb.StringProperty(repeated=True)
 
     @classmethod
     def new_game(cls, user_key, word):
@@ -61,7 +63,6 @@ class Game(ndb.Model):
         form.message = message
         return form
 
-
 class GameRecord(ndb.Model):
     """gameRecord object"""
     user = ndb.KeyProperty(required=True, kind='User')
@@ -99,15 +100,6 @@ class ScoreForm(messages.Message):
 class ScoreForms(messages.Message):
     items = messages.MessageField(ScoreForm, 1, repeated=True)
 
-class GameRecordForm(messages.Message):
-    user_name = messages.StringField(1, required=True)
-    date = messages.StringField(2, required=True)
-    won = messages.BooleanField(3, required=True)
-    score = messages.IntegerField(4, required=True)
-
-class GameRecordForms(messages.Message):
-    items = messages.MessageField(GameRecordForm, 1, repeated=True)
-
 class UserRankingForm(messages.Message):
     name = messages.StringField(1, required=True)
     win_ratio = messages.FloatField(2, required=True)
@@ -118,6 +110,13 @@ class UserRankingForms(messages.Message):
 class CancelGameForm(messages.Message):
     success = messages.BooleanField(1, required=True)
     message = messages.StringField(2, required=True)
+
+class MoveHistoryForm(messages.Message):
+    guess = messages.StringField(1, required=True)
+    result = messages.StringField(2, required=True)
+
+class MoveHistoryForms(messages.Message):
+    items = messages.MessageField(MoveHistoryForm, 1, repeated=True)
 
 class StringMessage(messages.Message):
     message = messages.StringField(1, required=True)
