@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import random
 from datetime import date
 from protorpc import messages
 from google.appengine.ext import ndb
@@ -54,13 +53,12 @@ class Game(ndb.Model):
         user.put()
 
     def to_form(self, message):
-        form = GameForm()
-        form.urlsafe_key = self.key.urlsafe()
-        form.user_name = self.user.get().name
-        form.attempts = self.attempts
-        form.current_result = self.current_result
-        form.game_over = self.game_over
-        form.message = message
+        form = GameForm(urlsafe_key = self.key.urlsafe(),
+                        user_name = self.user.get().name,
+                        attempts = self.attempts,
+                        current_result = self.current_result
+                        game_over = self.game_over
+                        )
         return form
 
 class GameRecord(ndb.Model):

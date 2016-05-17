@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import logging
 from google.appengine.ext import ndb
 import endpoints
 

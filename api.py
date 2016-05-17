@@ -2,7 +2,6 @@
 # encoding: utf-8
 
 import re
-import logging
 import endpoints
 from protorpc import remote, messages, message_types
 from google.appengine.api import memcache
